@@ -10,7 +10,7 @@
 using vec_str_u = std::vector<std::string>;
 using set_str_u = std::set<std::string>;
 
-enum class ops_s { ADN, OR };
+enum class ops_s { AND, OR };
 
 vec_str_u tokenize(const std::string &text) {
   vec_str_u res;
