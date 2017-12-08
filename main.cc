@@ -7,10 +7,13 @@
 #include <regex>
 #include <algorithm>
 
-using words_u = std::vector<std::string>;
+using vec_str_u = std::vector<std::string>;
+using set_str_u = std::set<std::string>;
 
-std::vector<std::string> tokenize(const std::string &text) {
-  std::vector<std::string> res;
+enum class ops_s { ADN, OR };
+
+vec_str_u tokenize(const std::string &text) {
+  vec_str_u res;
 
   std::regex re(R"(\s+)");
 
@@ -27,9 +30,9 @@ std::vector<std::string> tokenize(const std::string &text) {
   return res;
 }
 
-words_u remove_stop_words(const std::set<std::string> &stop_words,
-                          const words_u &words) {
-  words_u res;
+vec_str_u remove_stop_words(const set_str_u &stop_words,
+                            const vec_str_u &words) {
+  vec_str_u res;
   std::copy_if(words.begin(), words.end(), std::back_inserter(res),
                [&](const std::string &s) {
                  return std::find(stop_words.begin(), stop_words.end(), s) ==
@@ -38,18 +41,20 @@ words_u remove_stop_words(const std::set<std::string> &stop_words,
   return res;
 }
 
-void normalize_words(words_u &words) {}
+void normalize_words(vec_str_u &words) {}
 
-std::vector<std::string> get_stop_words() {
-  std::vector<std::string> res{"at", "me"};
+set_str_u get_stop_words() {
+  set_str_u res{"at", "me"};
   return res;
 }
 
 class indexer_s {
 public:
-  void add_doc(long doc_id, const words_u &words) {}
+  void add_doc(long doc_id, const vec_str_u &words) {}
 
-  std::map<std::string, int> words_count(const words_u &words) {}
+  std::map<std::string, int> words_count(const vec_str_u &words) {}
+
+  std::vector<long> search_docs(vec_str_u &terms, ops_s op, int limit) {}
 
   class item_s {};
 
@@ -61,21 +66,27 @@ private:
 class doc_repository_s {
 public:
   void add_doc(long id, const std::string &text) {
+    auto terms = get_terms(text);
+    indexer_.add_doc(id, terms);
+  }
+
+  std::vector<long> search_docs(const std::string &query, ops_s op, int limit) {
+    auto terms = get_terms(query);
+    return indexer_.search_docs(terms, op, limit);
+  }
+
+private:
+  indexer_s indexer_;
+
+  vec_str_u get_terms(const std::string &text) {
     auto words = tokenize(text);
 
     normalize_words(words);
 
     auto stop_words = get_stop_words();
 
-    words = remove_stop_words(stop_words, words);
-
-    indexer_.add_doc(id, words);
+    return remove_stop_words(stop_words, words);
   }
-
-  std::vector<long> search_docs(const std::string &query, int limit) {}
-
-private:
-  indexer_s indexer_;
 };
 
 /*
@@ -93,8 +104,8 @@ void test_tokenize() {
 }
 
 void test_remove_stop_words() {
-  std::set<std::string> stop_words{"at", "me"};
-  std::vector<std::string> words{"look", "at", "me", "please"};
+  set_str_u stop_words{"at", "me"};
+  vec_str_u words{"look", "at", "me", "please"};
   auto res = remove_stop_words(stop_words, words);
   bool ok = res[0] == "look" && res[1] == "please";
   print_test_result(ok, "test_remove_stop_words");
