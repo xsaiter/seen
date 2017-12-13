@@ -7,6 +7,9 @@
 #include <regex>
 #include <algorithm>
 
+#include "stemming/english_stem.h"
+#include "stemming/russian_stem.h"
+
 using vec_str_u = std::vector<std::string>;
 using set_str_u = std::set<std::string>;
 
@@ -111,9 +114,18 @@ void test_remove_stop_words() {
   print_test_result(ok, "test_remove_stop_words");
 }
 
+void test_stemming_english() {
+  std::wstring word(L"transformation");
+  stemming::english_stem<> stem;
+  stem(word);
+  bool ok = L"transform" == word;
+  print_test_result(ok, "test_stemming_english");
+}
+
 void run_all_tests() {
   test_tokenize();
   test_remove_stop_words();
+  test_stemming_english();
 }
 
 /*
