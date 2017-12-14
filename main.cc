@@ -1,3 +1,8 @@
+/*
+ * tf - term frequency
+ * idf - inverse document frequency
+*/
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -7,13 +12,26 @@
 #include <regex>
 #include <algorithm>
 
+// stemming
 #include "stemming/english_stem.h"
 #include "stemming/russian_stem.h"
 
+using str_u = std::string;
 using vec_str_u = std::vector<std::string>;
 using set_str_u = std::set<std::string>;
 
 enum class ops_s { AND, OR };
+
+set_str_u get_stop_words() {
+  set_str_u res{"at", "me"};
+  return res;
+}
+
+double get_tf(set_str_u &words, str_u &word) {
+  auto n = std::count(words.begin(), words.end(), word);
+  auto m = words.size();
+  return n / m;
+}
 
 vec_str_u tokenize(const std::string &text) {
   vec_str_u res;
@@ -37,7 +55,7 @@ vec_str_u remove_stop_words(const set_str_u &stop_words,
                             const vec_str_u &words) {
   vec_str_u res;
   std::copy_if(words.begin(), words.end(), std::back_inserter(res),
-               [&](const std::string &s) {
+               [&](const auto &s) {
                  return std::find(stop_words.begin(), stop_words.end(), s) ==
                         stop_words.end();
                });
@@ -46,42 +64,39 @@ vec_str_u remove_stop_words(const set_str_u &stop_words,
 
 void normalize_words(vec_str_u &words) {}
 
-set_str_u get_stop_words() {
-  set_str_u res{"at", "me"};
-  return res;
-}
+struct idx_elt_s {
+  long doc_id;
+};
 
-class indexer_s {
+class idx_s {
 public:
   void add_doc(long doc_id, const vec_str_u &words) {}
 
-  std::map<std::string, int> words_count(const vec_str_u &words) {}
+  std::map<std::string, int> words_count(const vec_str_u &words) const {}
 
-  std::vector<long> search_docs(vec_str_u &terms, ops_s op, int limit) {}
-
-  class item_s {};
+  std::set<long> search_docs(vec_str_u &terms, ops_s op, int limit) const {}
 
 private:
   std::set<long> doc_ids_;
-  std::map<std::string, std::set<item_s>> inverted_;
+  std::map<std::string, std::set<idx_elt_s>> inverted_;
 };
 
 class doc_repository_s {
 public:
   void add_doc(long id, const std::string &text) {
-    auto terms = get_terms(text);
-    indexer_.add_doc(id, terms);
+    auto terms = split_to_terms(text);
+    idx_.add_doc(id, terms);
   }
 
-  std::vector<long> search_docs(const std::string &query, ops_s op, int limit) {
-    auto terms = get_terms(query);
-    return indexer_.search_docs(terms, op, limit);
+  std::set<long> search_docs(const std::string &query, ops_s op, int limit) {
+    auto terms = split_to_terms(query);
+    return idx_.search_docs(terms, op, limit);
   }
 
 private:
-  indexer_s indexer_;
+  idx_s idx_;
 
-  vec_str_u get_terms(const std::string &text) {
+  vec_str_u split_to_terms(const std::string &text) {
     auto words = tokenize(text);
 
     normalize_words(words);
