@@ -17,8 +17,8 @@
 #include "stemming/russian_stem.h"
 
 using str_u = std::string;
-using vec_str_u = std::vector<std::string>;
-using set_str_u = std::set<std::string>;
+using vec_str_u = std::vector<str_u>;
+using set_str_u = std::set<str_u>;
 
 enum class ops_s { AND, OR };
 
@@ -33,7 +33,7 @@ double get_tf(set_str_u &words, str_u &word) {
   return n / m;
 }
 
-vec_str_u tokenize(const std::string &text) {
+vec_str_u tokenize(const str_u &text) {
   vec_str_u res;
 
   std::regex re(R"(\s+)");
@@ -72,23 +72,23 @@ class idx_s {
 public:
   void add_doc(long doc_id, const vec_str_u &words) {}
 
-  std::map<std::string, int> words_count(const vec_str_u &words) const {}
+  std::map<str_u, int> words_count(const vec_str_u &words) const {}
 
   std::set<long> search_docs(vec_str_u &terms, ops_s op, int limit) const {}
 
 private:
   std::set<long> doc_ids_;
-  std::map<std::string, std::set<idx_elt_s>> inverted_;
+  std::map<str_u, std::set<idx_elt_s>> inverted_;
 };
 
 class doc_repository_s {
 public:
-  void add_doc(long id, const std::string &text) {
+  void add_doc(long id, const str_u &text) {
     auto terms = split_to_terms(text);
     idx_.add_doc(id, terms);
   }
 
-  std::set<long> search_docs(const std::string &query, ops_s op, int limit) {
+  std::set<long> search_docs(const str_u &query, ops_s op, int limit) {
     auto terms = split_to_terms(query);
     return idx_.search_docs(terms, op, limit);
   }
@@ -96,7 +96,7 @@ public:
 private:
   idx_s idx_;
 
-  vec_str_u split_to_terms(const std::string &text) {
+  vec_str_u split_to_terms(const str_u &text) {
     auto words = tokenize(text);
 
     normalize_words(words);
@@ -111,7 +111,7 @@ private:
  * tests
 */
 
-void print_test_result(bool ok, const std::string &message) {
+void print_test_result(bool ok, const str_u &message) {
   std::cout << (ok == true ? "OK-" : "FAIL-") << message << std::endl;
 }
 
